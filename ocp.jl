@@ -1,13 +1,11 @@
-# double integrator min tf, abstract definition
-@def ocp1 begin
-    tf ∈ R, variable
-    t ∈ [ 0, tf ], time
-    x ∈ R², state
-    u ∈ R, control
-    -1 ≤ u(t) ≤ 1
-    x(0) == [ 0, 0 ]
-    x(tf) == [ 1, 0 ]
-    0.1 ≤ tf ≤ Inf 
-    ẋ(t) == [ x₂(t), u(t) ] 
-    tf → min
-end
+ocp1 = Model(variable=true)
+variable!(ocp1, 1)
+time!(ocp1, 0, Index(1))
+state!(ocp1, 2)
+control!(ocp1, 1)
+constraint!(ocp1, :control, -1, 1, :control_constraint)
+constraint!(ocp1, :initial, [0,0], :initial_constraint)
+constraint!(ocp1, :final, [1,0], :final_constraint)
+constraint!(ocp1, :variable, 0.1, Inf, :variable_constraint)
+dynamics!(ocp1, (x, u, v) ->  [x[2], u])
+objective!(ocp1, :mayer, (x0, xf, v) -> v)
