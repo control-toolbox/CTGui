@@ -1,32 +1,69 @@
 using CTDirect
+using CTBase # for plot, todo: reexport in CTDirect
 using Mousetrap 
 
+
+my_ocp = nothing
+my_sol = nothing
+
+# not very useful...
+function display_ocp(ocp)
+    println(ocp)
+end
+
+# +++todo: load a .jl file
 include("ocp.jl")
+function on_load_ocp_clicked(seff::Button)
+    println("Load problem...")
+    global my_ocp = ocp
+    display_ocp(my_ocp)
+    return nothing
+end
+
+# output is currently in julia REPL, try to pass textfield
+function on_solve_clicked(self::Button)
+    display_ocp(my_ocp)
+    println("Solve problem...")
+    global my_sol = solve(my_ocp)
+    return nothing
+end
+
+# currently fails, probably needs to pass a 'figure' object
+function on_plot_clicked(self::Button)
+    println("Plot solution...")
+    plot(my_sol)
+    return nothing
+end
 
 
 # main window control-toolbox
 main() do app::Application
+
+    # +++ use actions instead
+
+    # load ocp
+    button_load_ocp = Button()
+    set_child!(button_load_ocp, Label("Load"))
+    set_tooltip_text!(button_load_ocp, "Load problem")
+    connect_signal_clicked!(on_load_ocp_clicked, button_load_ocp)
+
+    # solve ocp
+    button_solve = Button()
+    set_child!(button_solve, Label("Solve"))
+    set_tooltip_text!(button_solve, "Solve problem")
+    connect_signal_clicked!(on_solve_clicked, button_solve)
+
+    # plot solution
+    button_plot = Button()
+    set_child!(button_plot, Label("Plot"))
+    set_tooltip_text!(button_plot, "Plot solution")
+    connect_signal_clicked!(on_plot_clicked, button_plot)
+
+    # main window layout
     window = Window(app)
-    #set_child!(window, Title("control-toolbox"))
-
-    button = Button()
-    connect_signal_clicked!(button) do self::Button
-        println(ocp1)
-        sol = solve(ocp1)
-    end
-
-    set_child!(window, button)
+    set_title!(window, "control-toolbox")
+    # later add 3 tabs below button bar
+    set_child!(window, hbox(button_load_ocp, button_solve, button_plot))
 
     present!(window)
 end
-
-# OCP definition
-# load OCP in .jl
-
-
-# solve
-# run and display basic solve
-
-# visualization
-# plot solution
-=#
