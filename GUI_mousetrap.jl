@@ -1,3 +1,4 @@
+using CTDirect
 using Mousetrap 
 #= conflict with solve :(
 ...
@@ -6,7 +7,7 @@ ERROR: LoadError: MethodError: no method matching +(::Float64, ::Expr)
 
 the error disappears if we comment using Mousetrap...
 =#
-using CTDirect
+
 
 
 include("ocp.jl")
