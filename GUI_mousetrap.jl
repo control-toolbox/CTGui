@@ -1,10 +1,31 @@
-using Mousetrap
+using Mousetrap 
+#= conflict with solve :(
+...
+EXIT: Optimal Solution Found.
+ERROR: LoadError: MethodError: no method matching +(::Float64, ::Expr)
+
+the error disappears if we comment using Mousetrap...
+=#
 using CTDirect
 
+
+include("ocp.jl")
+sol = solve(ocp1)
+
+#=
 # main window control-toolbox
 main() do app::Application
     window = Window(app)
-    set_child!(window, Label("control-toolbox"))
+    #set_child!(window, Title("control-toolbox"))
+
+    button = Button()
+    connect_signal_clicked!(button) do self::Button
+        println(ocp1)
+        
+    end
+
+    set_child!(window, button)
+
     present!(window)
 end
 
@@ -17,3 +38,4 @@ end
 
 # visualization
 # plot solution
+=#
