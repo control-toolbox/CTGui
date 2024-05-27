@@ -12,6 +12,7 @@ function display_ocp(ocp)
 end
 
 # +++todo: load a .jl file
+#  cf FileChooser ? openfile to display / edit externally ?
 include("ocp.jl")
 function on_load_ocp_clicked(seff::Button)
     println("Load problem...")
@@ -29,6 +30,7 @@ function on_solve_clicked(self::Button)
 end
 
 # currently fails, probably needs to pass a 'figure' object
+# renderarea ?
 function on_plot_clicked(self::Button)
     println("Plot solution...")
     plot(my_sol)
@@ -39,7 +41,7 @@ end
 # main window control-toolbox
 main() do app::Application
 
-    # +++ use actions instead
+    # +++ use Actions instead
 
     # load ocp
     button_load_ocp = Button()
@@ -62,7 +64,9 @@ main() do app::Application
     # main window layout
     window = Window(app)
     set_title!(window, "control-toolbox")
-    # later add 3 tabs below button bar
+    # MenuBar
+    # reuse bocop2 icons for toolbar set_icon!
+    # later add 3 tabs below button bar, cf StackSwitcher ?
     set_child!(window, hbox(button_load_ocp, button_solve, button_plot))
 
     present!(window)
