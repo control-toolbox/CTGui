@@ -14,11 +14,12 @@ function display_ocp(ocp)
 end
 
 # +++ later ask for ocp name (default: "ocp")
-function on_load_ocp_clicked(self::Button)
+function on_load_ocp_clicked(self::Button, show_ocp_path)
     file_chooser = FileChooser(FILE_CHOOSER_ACTION_OPEN_FILE)
     on_accept!(file_chooser) do self::FileChooser, file::Vector{FileDescriptor}
         global ocp_path = get_path(file[1])
         include(ocp_path)
+        set_text!(show_ocp_path, "Current problem: $ocp_path")
         global current_ocp = eval(Symbol(ocp_name))
         println("Load problem defined in $ocp_path")
     end
@@ -74,11 +75,13 @@ main() do app::Application
     # +++ use Actions instead
 
     # load ocp
+    show_ocp_path = Label("Current problem: $ocp_path")
+
     # +++ auto load last problem used
     button_load_ocp = Button()
     set_child!(button_load_ocp, Label("Load OCP"))
     set_tooltip_text!(button_load_ocp, "Load problem definition")
-    connect_signal_clicked!(on_load_ocp_clicked, button_load_ocp)
+    connect_signal_clicked!(on_load_ocp_clicked, button_load_ocp, show_ocp_path)
 
     # +++ filemonitor later ?
     button_reload_ocp = Button()
@@ -113,12 +116,16 @@ main() do app::Application
     # +++later add 3 tabs below button bar, cf StackSwitcher ?
 
     # layout blocks: ocp, solve, plot
-    #show_ocp_path = Current problem: $ocp_file
     #show_ocp_name ocp_name (editable, bouton edit ?)
     #ocp_info = hbox(show_ocp_path, show_ocp_name)
-    ocp_bar = hbox(button_load_ocp, button_reload_ocp, button_edit_ocp)
-    set_spacing!(ocp_bar, 10)
-    block_ocp = ocp_bar
+    #ocp_bar = hbox(button_load_ocp, button_reload_ocp, button_edit_ocp)
+    #set_spacing!(ocp_bar, 10)
+    ocp_bar = CenterBox(ORIENTATION_HORIZONTAL)
+    set_start_child!(ocp_bar, button_load_ocp)
+    set_center_child!(ocp_bar, button_reload_ocp)
+    set_end_child!(ocp_bar, button_edit_ocp)
+    block_ocp = vbox(show_ocp_path, ocp_bar)
+    set_spacing!(block_ocp, 3)
     block_solve = button_solve
     block_plot = button_plot
 
