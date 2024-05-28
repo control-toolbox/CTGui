@@ -1,5 +1,5 @@
 # double integrator min tf, abstract definition
-@def ocp2 begin
+@def ocp begin
     tf ∈ R, variable
     t ∈ [ 0, tf ], time
     x ∈ R², state
