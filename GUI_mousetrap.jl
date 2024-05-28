@@ -23,6 +23,10 @@ function on_load_ocp_clicked(self::Button, external_edit)
         ocp_file = file[1]
         # load OCP definition
         include(get_path(ocp_file))
+        ocp_name = "ocp"
+        global current_ocp = eval(Symbol(ocp_name))
+        global last_ocp = current_ocp
+        #display_ocp(current_ocp)
         println("Loading OCP defined in $ocp_file")
         # open file in external editor
         if get_is_active(external_edit)
@@ -34,10 +38,6 @@ function on_load_ocp_clicked(self::Button, external_edit)
         println("Loading cancelled...")
     end
     present!(file_chooser)
-    ocp_name = "ocp"
-    global current_ocp = eval(Symbol(ocp_name))
-    global last_ocp = current_ocp
-    display_ocp(current_ocp)
     return nothing
 end
 
