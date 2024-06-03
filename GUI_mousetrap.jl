@@ -1,6 +1,8 @@
 using CTDirect
-using CTBase # for plot, todo: reexport in CTDirect
-using Mousetrap 
+using CTBase #for plot
+using Mousetrap
+using JLD2
+
 
 # use global variables for now
 current_ocp = nothing
@@ -53,18 +55,46 @@ function on_edit_ocp_clicked(self::Button)
 end
 # output is currently in julia REPL, try to pass textfield ?
 # note: unless we bundle the app we will have the julia repl anyway, so maybe leave the outputs in it ?
+# +++ try to use Logging ?
 function on_solve_clicked(self::Button)
     #display_ocp(current_ocp)
-    println("Solve problem...")
-    global current_sol = solve(current_ocp)
+    if isnothing(current_ocp)
+        println("Please load OCP problem before solving.")
+    else
+        println("Solve problem...")
+        global current_sol = solve(current_ocp)
+    end
+    return nothing
+end
+
+# +++ later ask for name, maybe a filechooser ?
+function on_save_sol_clicked(self::Button)
+    if isnothing(current_sol)
+        println("Please solve problem before saving solution.")
+    else
+        print("Save problem solution...")
+        save_object("solution.jld2", current_sol)
+        println(" Done")
+    end
+    return nothing
+end
+function on_load_sol_clicked(self::Button)
+    print("Load problem solution...")
+    global current_sol = load_object("solution.jld2")
+    println(" Done")
     return nothing
 end
 
 # Note: plot appears in standalone window
 function on_plot_clicked(self::Button)
-    println("Plot solution...")
-    p = plot(current_sol)
-    display(p)
+    if isnothing(current_sol)
+        println("Please solve problem or load solution before plotting.")
+    else
+        print("Plot solution...")
+        p = plot(current_sol)
+        display(p)
+        println(" Done")
+    end
     return nothing
 end
 
@@ -101,6 +131,11 @@ main() do app::Application
     set_tooltip_text!(button_solve, "Solve problem")
     connect_signal_clicked!(on_solve_clicked, button_solve)
 
+    button_save_sol = Button()
+    set_child!(button_save_sol, Label("Save solution"))
+    set_tooltip_text!(button_save_sol, "Save problem solution after solve")
+    connect_signal_clicked!(on_save_sol_clicked, button_save_sol)
+
     # plot solution
     # +++ add save plot
     # +++ auto load last solution (this would open a new window, add as an option)
@@ -110,6 +145,11 @@ main() do app::Application
     set_child!(button_plot, Label("Plot solution"))
     set_tooltip_text!(button_plot, "Plot solution")
     connect_signal_clicked!(on_plot_clicked, button_plot)
+
+    button_load_sol = Button()
+    set_child!(button_load_sol, Label("Load solution"))
+    set_tooltip_text!(button_load_sol, "Load an OCP solution")
+    connect_signal_clicked!(on_load_sol_clicked, button_load_sol)
 
     # +++MenuBar
     # +++reuse bocop2 icons for toolbar set_icon!
@@ -126,8 +166,8 @@ main() do app::Application
     set_end_child!(ocp_bar, button_edit_ocp)
     block_ocp = vbox(show_ocp_path, ocp_bar)
     set_spacing!(block_ocp, 3)
-    block_solve = button_solve
-    block_plot = button_plot
+    block_solve = hbox(button_solve, button_save_sol)
+    block_plot = hbox(button_plot, button_load_sol)
 
     # main window
     window = Window(app)
