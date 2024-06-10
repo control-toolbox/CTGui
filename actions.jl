@@ -55,7 +55,7 @@ function save_sol(data::GUI_data)
         println("Please solve problem before saving solution.")
     else
         print("Save problem solution...")
-        save_object("solution.jld2", data.current_sol)
+        save_object("./test/solution.jld2", data.current_sol)
         println(" Done")
     end
     return nothing
@@ -63,7 +63,7 @@ end
 
 function load_sol(data::GUI_data)
     print("Load problem solution...")
-    data.current_sol = load_object("solution.jld2")
+    data.current_sol = load_object("./test/solution.jld2")
     println(" Done")
     return nothing
 end
