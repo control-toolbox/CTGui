@@ -1,6 +1,7 @@
 using CTDirect
 using CTBase #for plot
 using JLD2
+using Plots
 
 # Implement actions independently from GUI framework
 # Ideally could be reused from different GUIs
@@ -56,16 +57,19 @@ function save_sol(data::GUI_data)
     if isnothing(data.current_sol)
         println("Please solve problem before saving solution.")
     else
-        print("Save problem solution...")
-        save_object("./test/solution.jld2", data.current_sol)
+        sol_filename = "./test/solution.jld2"
+        print("Save problem solution ", sol_filename, " ...")
+        save_object(sol_filename, data.current_sol)
         println(" Done")
     end
     return nothing
 end
 
+# +++ later ask for name, maybe a filechooser ?
 function load_sol(data::GUI_data)
-    print("Load problem solution...")
-    data.current_sol = load_object("./test/solution.jld2")
+    sol_filename = "./test/solution.jld2"
+    print("Load problem solution ", sol_filename, " ...")
+    data.current_sol = load_object(sol_filename)
     println(" Done")
     return nothing
 end
@@ -79,5 +83,16 @@ function plot_sol(data::GUI_data)
         display(plot(data.current_sol))
         println(" Done")
     end
+    return nothing
+end
+
+# +++ later ask for name, maybe a filechooser ?
+# +++ NB this will close the plot window -_-
+# +++ maybe add the plot to data and re-display it ?
+function save_plot(data::GUI_data)
+    plot_filename = "./test/solution.png"
+    print("Save plot as ", plot_filename, " ...")
+    Plots.savefig(plot_filename)
+    println(" Done")  
     return nothing
 end

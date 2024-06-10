@@ -65,9 +65,21 @@ function on_load_sol_clicked(self::Button, data::GUI_data)
     return nothing
 end
 
+function on_print_level_set(self::Entry, data::GUI_data)
+    # +++ call generic set_solve_option(key, value)
+    println("input ", get_text(self))
+    #data.solve_options[:print_level] = parse(Int,get_text(self))
+    return nothing
+end
+
 # Note: plot appears in standalone window
 function on_plot_clicked(self::Button, data::GUI_data)
     plot_sol(data)
+    return nothing
+end
+
+function on_save_plot_clicked(self::Button, data::GUI_data)
+    save_plot(data)
     return nothing
 end
 
@@ -109,8 +121,21 @@ main() do app::Application
     set_tooltip_text!(button_save_sol, "Save problem solution after solve")
     connect_signal_clicked!(on_save_sol_clicked, button_save_sol, data)
 
+    button_load_sol = Button()
+    set_child!(button_load_sol, Label("Load solution"))
+    set_tooltip_text!(button_load_sol, "Load an OCP solution")
+    connect_signal_clicked!(on_load_sol_clicked, button_load_sol, data)
+
+    # +++ bug ? get_text always returns empty string -_-
+    print_level_entry = Entry()
+    set_max_width_chars!(print_level_entry,1)
+    set_text!(print_level_entry, string(data.solve_options[:print_level]))
+    connect_signal_text_changed!(print_level_entry) do self::Entry
+        println("text is now: $(get_text(self))")
+    end
+    connect_signal_activate!(on_print_level_set, print_level_entry, data)
+
     # plot solution
-    # +++ add save plot
     # +++ auto load last solution (this would open a new window, add as an option)
     # +++ option for new plot or reset previous one (need to add some reuse option to CTBase plot ?)
     # +++ close all plots on exit ?
@@ -119,10 +144,10 @@ main() do app::Application
     set_tooltip_text!(button_plot, "Plot solution")
     connect_signal_clicked!(on_plot_clicked, button_plot, data)
 
-    button_load_sol = Button()
-    set_child!(button_load_sol, Label("Load solution"))
-    set_tooltip_text!(button_load_sol, "Load an OCP solution")
-    connect_signal_clicked!(on_load_sol_clicked, button_load_sol, data)
+    button_save_plot = Button()
+    set_child!(button_save_plot, Label("Save plot"))
+    set_tooltip_text!(button_save_plot, "Save plot")
+    connect_signal_clicked!(on_save_plot_clicked, button_save_plot, data)
 
     # +++MenuBar
     # +++reuse bocop2 icons for toolbar set_icon!
@@ -136,8 +161,18 @@ main() do app::Application
     data.label_show_ocp_path = Label("Current problem: $(data.ocp_path)")
     block_ocp = vbox(data.label_show_ocp_path, ocp_bar)
     set_spacing!(block_ocp, 3)
-    block_solve = hbox(button_solve, button_save_sol)
-    block_plot = hbox(button_plot, button_load_sol)
+
+    block_solve = CenterBox(ORIENTATION_HORIZONTAL)
+    set_start_child!(block_solve, button_solve)    
+    set_center_child!(block_solve, button_save_sol)
+    set_end_child!(block_solve, button_load_sol)
+
+    print_level_input = hbox(Label("print_level"), print_level_entry)
+    solve_options = hbox(print_level_input)
+
+    block_plot = CenterBox(ORIENTATION_HORIZONTAL)
+    set_start_child!(block_plot, button_plot)
+    set_end_child!(block_plot, button_save_plot)
 
     # main window
     window = Window(app)
@@ -146,6 +181,6 @@ main() do app::Application
     set_margin!(sep1, 20)
     sep2 = Separator()
     set_margin!(sep2, 20)
-    set_child!(window, vbox(block_ocp, sep1, block_solve, sep2, block_plot))
+    set_child!(window, vbox(block_ocp, sep1, block_solve, solve_options, sep2, block_plot))
     present!(window)
 end
