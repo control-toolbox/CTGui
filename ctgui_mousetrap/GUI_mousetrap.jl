@@ -4,7 +4,7 @@ using Mousetrap
 using JLD2
 
 # GUI-agnostic actions
-include("actions.jl")
+include("../actions.jl")
 
 
 # Mousetrap actions handlers
