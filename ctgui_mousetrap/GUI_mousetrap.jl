@@ -27,6 +27,7 @@ end
 
 function on_reload_ocp_clicked(self::Button, data::GUI_data)
     load_ocp(data)
+    set_text!(data.label_show_ocp_path, "Current problem: $(data.ocp_path)")
     return nothing
 end
 
