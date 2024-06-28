@@ -21,6 +21,7 @@ mutable struct GUI_data
     current_sol::Union{Nothing, CTBase.OptimalControlSolution}
     ocp_path::String
     ocp_name::String
+    sol_path::String
     solve_options::Dict
     label_show_ocp_path # Label for Mousetrap
 
@@ -31,6 +32,7 @@ mutable struct GUI_data
         data.current_sol = nothing
         data.ocp_path = "please load problem"
         data.ocp_name = "ocp"
+        data.sol_path = "./test/solution"
         data.solve_options = Dict(:grid_size=>CTDirect.__grid_size_direct(), :print_level=>CTDirect.__print_level_ipopt(), :mu_strategy=>CTDirect.__mu_strategy_ipopt(), :display=>CTDirect.__display(), :max_iter=>1000, :tol=>1e-8) #+++ add ctdirect default for tol and maxiter
         return data
     end
@@ -61,14 +63,12 @@ function solve_ocp(data::GUI_data)
     return nothing
 end
 
-# +++ later ask for name, maybe a filechooser ?
 function save_sol(data::GUI_data)
     if isnothing(data.current_sol)
         println("Please solve problem before saving solution.")
     else
-        sol_filename = "./test/solution"
-        print("Save problem solution ", sol_filename, ".jld2 ...")
-        save_OCP_solution(data.current_sol, filename_prefix=sol_filename)
+        print("Save problem solution ", data.sol_path, ".jld2 ...")
+        save_OCP_solution(data.current_sol, filename_prefix=data.sol_path)
         println(" Done")
     end
     return nothing
@@ -86,11 +86,9 @@ function export_sol(data::GUI_data)
     return nothing
 end
 
-# +++ later ask for name, maybe a filechooser ?
 function load_sol(data::GUI_data)
-    sol_filename = "./test/solution.jld2"
-    print("Load problem solution ", sol_filename, " ...")
-    data.current_sol = load_object(sol_filename)
+    print("Load problem solution ", data.sol_path, ".jld2 ...")
+    data.current_sol = load_OCP_solution(data.sol_path)
     println(" Done")
     return nothing
 end
