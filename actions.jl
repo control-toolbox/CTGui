@@ -1,6 +1,15 @@
 using CTDirect
-using CTBase #for plot
+using CTBase
+
+# for solve
+using NLPModelsIpopt
+using HSL
+
+# for save/load/export
 using JLD2
+using JSON3
+
+# for plot
 using Plots
 
 # Implement actions independently from GUI framework
@@ -57,9 +66,21 @@ function save_sol(data::GUI_data)
     if isnothing(data.current_sol)
         println("Please solve problem before saving solution.")
     else
-        sol_filename = "./test/solution.jld2"
-        print("Save problem solution ", sol_filename, " ...")
-        save_object(sol_filename, data.current_sol)
+        sol_filename = "./test/solution"
+        print("Save problem solution ", sol_filename, ".jld2 ...")
+        save_OCP_solution(data.current_sol, filename_prefix=sol_filename)
+        println(" Done")
+    end
+    return nothing
+end
+
+function export_sol(data::GUI_data)
+    if isnothing(data.current_sol)
+        println("Please solve problem before exporting solution.")
+    else
+        sol_filename = "./test/solution"
+        print("Export problem solution ", sol_filename, ".json ...")
+        export_OCP_solution(data.current_sol, filename_prefix=sol_filename)
         println(" Done")
     end
     return nothing

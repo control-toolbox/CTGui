@@ -1,7 +1,4 @@
-using CTDirect
-using CTBase #for plot
 using Mousetrap
-using JLD2
 
 # GUI-agnostic actions
 include("../actions.jl")
@@ -66,6 +63,11 @@ function on_load_sol_clicked(self::Button, data::GUI_data)
     return nothing
 end
 
+function on_export_sol_clicked(self::Button, data::GUI_data)
+    export_sol(data)
+    return nothing
+end
+
 function on_print_level_set(self::Entry, data::GUI_data)
     # +++ call generic set_solve_option(key, value)
     println("input ", get_text(self))
@@ -111,7 +113,6 @@ main() do app::Application
     connect_signal_clicked!(on_edit_ocp_clicked, button_edit_ocp, data)
 
     # solve ocp
-    # +++ add save sol (need function in CTDirect, or use native julia format and just save the variable)
     button_solve = Button()
     set_child!(button_solve, Label("Solve OCP"))
     set_tooltip_text!(button_solve, "Solve problem")
@@ -126,6 +127,11 @@ main() do app::Application
     set_child!(button_load_sol, Label("Load solution"))
     set_tooltip_text!(button_load_sol, "Load an OCP solution")
     connect_signal_clicked!(on_load_sol_clicked, button_load_sol, data)
+
+    button_export_sol = Button()
+    set_child!(button_export_sol, Label("Export solution"))
+    set_tooltip_text!(button_export_sol, "Export problem solution in JSON format")
+    connect_signal_clicked!(on_export_sol_clicked, button_export_sol, data)
 
     # +++ bug ? get_text always returns empty string -_-
     print_level_entry = Entry()
@@ -168,12 +174,13 @@ main() do app::Application
     set_center_child!(block_solve, button_save_sol)
     set_end_child!(block_solve, button_load_sol)
 
-    print_level_input = hbox(Label("print_level"), print_level_entry)
-    solve_options = hbox(print_level_input)
+    print_level_input = hbox(Label("print_level"), print_level_entry) # does not get text properly...
+    solve_options = hbox()
 
     block_plot = CenterBox(ORIENTATION_HORIZONTAL)
     set_start_child!(block_plot, button_plot)
-    set_end_child!(block_plot, button_save_plot)
+    set_center_child!(block_plot, button_save_plot)
+    set_end_child!(block_plot, button_export_sol)
 
     # main window
     window = Window(app)
