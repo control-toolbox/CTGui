@@ -1,7 +1,4 @@
-using CTDirect
-using CTBase #for plot
 using Mousetrap
-using JLD2
 
 # GUI-agnostic actions
 include("../actions.jl")
@@ -55,14 +52,42 @@ function on_solve_clicked(self::Button, data::GUI_data)
     return nothing
 end
 
-# +++ later ask for name, maybe a filechooser ?
 function on_save_sol_clicked(self::Button, data::GUI_data)
     save_sol(data)
     return nothing
 end
 
+#+++ filechooser needs to allow creation of new file...
+# FILE_CHOOSER_ACTION_SAVE seems broken
+function on_save_sol_as_clicked(self::Button, data::GUI_data)
+    file_chooser = FileChooser(FILE_CHOOSER_OPEN_FILE)
+    on_accept!(file_chooser) do self::FileChooser, file::Vector{FileDescriptor}
+        data.sol_path = get_path(file[1])
+        save_sol(data)
+        return nothing
+    end
+    on_cancel!(file_chooser) do self::FileChooser
+        println("Save cancelled...")
+    end
+    present!(file_chooser)
+end
+
+# +++ add filter .jld2
 function on_load_sol_clicked(self::Button, data::GUI_data)
-    load_sol(data)
+    file_chooser = FileChooser(FILE_CHOOSER_ACTION_OPEN_FILE)
+    on_accept!(file_chooser) do self::FileChooser, file::Vector{FileDescriptor}
+        data.sol_path = splitext(get_path(file[1]))[1]
+        load_sol(data)
+        return nothing
+    end
+    on_cancel!(file_chooser) do self::FileChooser
+        println("Load cancelled...")
+    end
+    present!(file_chooser)
+end
+
+function on_export_sol_clicked(self::Button, data::GUI_data)
+    export_sol(data)
     return nothing
 end
 
@@ -111,21 +136,31 @@ main() do app::Application
     connect_signal_clicked!(on_edit_ocp_clicked, button_edit_ocp, data)
 
     # solve ocp
-    # +++ add save sol (need function in CTDirect, or use native julia format and just save the variable)
     button_solve = Button()
     set_child!(button_solve, Label("Solve OCP"))
     set_tooltip_text!(button_solve, "Solve problem")
     connect_signal_clicked!(on_solve_clicked, button_solve, data)
 
     button_save_sol = Button()
-    set_child!(button_save_sol, Label("Save solution"))
-    set_tooltip_text!(button_save_sol, "Save problem solution after solve")
+    set_child!(button_save_sol, Label("Save"))
+    set_tooltip_text!(button_save_sol, "Save problem solution")
     connect_signal_clicked!(on_save_sol_clicked, button_save_sol, data)
+
+    button_save_sol_as = Button()
+    set_child!(button_save_sol_as, Label("Save as"))
+    set_tooltip_text!(button_save_sol_as, "Save problem solution as ...")
+    connect_signal_clicked!(on_save_sol_as_clicked, button_save_sol_as, data)
 
     button_load_sol = Button()
     set_child!(button_load_sol, Label("Load solution"))
     set_tooltip_text!(button_load_sol, "Load an OCP solution")
     connect_signal_clicked!(on_load_sol_clicked, button_load_sol, data)
+
+    button_export_sol = Button()
+    set_child!(button_export_sol, Label("Export"))
+    set_tooltip_text!(button_export_sol, "Export problem solution in JSON format")
+    connect_signal_clicked!(on_export_sol_clicked, button_export_sol, data)
+
 
     # +++ bug ? get_text always returns empty string -_-
     print_level_entry = Entry()
@@ -164,16 +199,22 @@ main() do app::Application
     set_spacing!(block_ocp, 3)
 
     block_solve = CenterBox(ORIENTATION_HORIZONTAL)
-    set_start_child!(block_solve, button_solve)    
-    set_center_child!(block_solve, button_save_sol)
-    set_end_child!(block_solve, button_load_sol)
+    set_start_child!(block_solve, button_solve)
+    
+    block_solution = CenterBox(ORIENTATION_HORIZONTAL)
+    set_start_child!(block_solution, button_save_sol_as)
+    set_center_child!(block_solution, button_save_sol)
+    set_end_child!(block_solution, button_export_sol)
 
-    print_level_input = hbox(Label("print_level"), print_level_entry)
-    solve_options = hbox(print_level_input)
+    #=
+    print_level_input = hbox(Label("print_level"), print_level_entry) # does not get text properly...
+    solve_options = hbox()
+    =#
 
     block_plot = CenterBox(ORIENTATION_HORIZONTAL)
     set_start_child!(block_plot, button_plot)
-    set_end_child!(block_plot, button_save_plot)
+    set_center_child!(block_plot, button_save_plot)
+    set_end_child!(block_plot, button_load_sol)
 
     # main window
     window = Window(app)
@@ -182,6 +223,6 @@ main() do app::Application
     set_margin!(sep1, 20)
     sep2 = Separator()
     set_margin!(sep2, 20)
-    set_child!(window, vbox(block_ocp, sep1, block_solve, solve_options, sep2, block_plot))
+    set_child!(window, vbox(block_ocp, sep1, block_solve, block_solution, sep2, block_plot))
     present!(window)
 end
