@@ -48,9 +48,22 @@ end
 # note: unless we bundle the app we will have the julia repl anyway, so maybe leave the outputs in it ?
 # +++ try to use Logging ?
 function on_solve_clicked(self::Button, data::GUI_data)
+    # (re)set warm start
+    if data.use_warmstart
+        data.solve_options[:init]=data.warmstart_sol
+    else
+        delete!(data.solve_options, :init)
+    end
+    # solve ocp
     solve_ocp(data)
     return nothing
 end
+
+function on_warmstart_switched(self::Switch, data::GUI_data)
+    data.use_warmstart = get_is_active(self)
+    return nothing
+end
+
 
 function on_save_sol_clicked(self::Button, data::GUI_data)
     save_sol(data)
@@ -78,6 +91,20 @@ function on_load_sol_clicked(self::Button, data::GUI_data)
     on_accept!(file_chooser) do self::FileChooser, file::Vector{FileDescriptor}
         data.sol_path = splitext(get_path(file[1]))[1]
         load_sol(data)
+        return nothing
+    end
+    on_cancel!(file_chooser) do self::FileChooser
+        println("Load cancelled...")
+    end
+    present!(file_chooser)
+end
+
+function on_load_warmstart_sol_clicked(self::Button, data::GUI_data)
+    file_chooser = FileChooser(FILE_CHOOSER_ACTION_OPEN_FILE)
+    on_accept!(file_chooser) do self::FileChooser, file::Vector{FileDescriptor}
+        data.warmstart_path = splitext(get_path(file[1]))[1]
+        load_warmstart_sol(data)
+        set_text!(data.label_show_warmstart_path, "Warmstart: $(data.warmstart_path)")
         return nothing
     end
     on_cancel!(file_chooser) do self::FileChooser
@@ -141,6 +168,7 @@ main() do app::Application
     set_tooltip_text!(button_solve, "Solve problem")
     connect_signal_clicked!(on_solve_clicked, button_solve, data)
 
+    # solution
     button_save_sol = Button()
     set_child!(button_save_sol, Label("Save"))
     set_tooltip_text!(button_save_sol, "Save problem solution")
@@ -156,12 +184,17 @@ main() do app::Application
     set_tooltip_text!(button_load_sol, "Load an OCP solution")
     connect_signal_clicked!(on_load_sol_clicked, button_load_sol, data)
 
+    button_load_warmstart_sol = Button()
+    set_child!(button_load_warmstart_sol, Label("..."))
+    set_tooltip_text!(button_load_warmstart_sol, "Choose OCP solution for warmstart")
+    connect_signal_clicked!(on_load_warmstart_sol_clicked, button_load_warmstart_sol, data)
+
     button_export_sol = Button()
     set_child!(button_export_sol, Label("Export"))
     set_tooltip_text!(button_export_sol, "Export problem solution in JSON format")
     connect_signal_clicked!(on_export_sol_clicked, button_export_sol, data)
 
-
+    #=
     # +++ bug ? get_text always returns empty string -_-
     print_level_entry = Entry()
     set_max_width_chars!(print_level_entry,1)
@@ -170,6 +203,7 @@ main() do app::Application
         println("text is now: $(get_text(self))")
     end
     connect_signal_activate!(on_print_level_set, print_level_entry, data)
+    =#
 
     # plot solution
     # +++ auto load last solution (this would open a new window, add as an option)
@@ -185,6 +219,10 @@ main() do app::Application
     set_tooltip_text!(button_save_plot, "Save plot")
     connect_signal_clicked!(on_save_plot_clicked, button_save_plot, data)
 
+    switch_warmstart = Switch()
+    set_is_active!(switch_warmstart, false)
+    connect_signal_switched!(on_warmstart_switched, switch_warmstart, data)
+
     # +++MenuBar
     # +++reuse bocop2 icons for toolbar set_icon!
     # +++later add 3 tabs below button bar, cf StackSwitcher ?
@@ -192,19 +230,22 @@ main() do app::Application
     # layout blocks: ocp, solve, plot
     ocp_bar = CenterBox(ORIENTATION_HORIZONTAL)
     set_start_child!(ocp_bar, button_load_ocp)
-    set_center_child!(ocp_bar, button_reload_ocp)
-    set_end_child!(ocp_bar, button_edit_ocp)
+    set_center_child!(ocp_bar, button_edit_ocp)
+    set_end_child!(ocp_bar, button_reload_ocp)
     data.label_show_ocp_path = Label("Current problem: $(data.ocp_path)")
     block_ocp = vbox(data.label_show_ocp_path, ocp_bar)
     set_spacing!(block_ocp, 3)
 
     block_solve = CenterBox(ORIENTATION_HORIZONTAL)
     set_start_child!(block_solve, button_solve)
-    
-    block_solution = CenterBox(ORIENTATION_HORIZONTAL)
-    set_start_child!(block_solution, button_save_sol_as)
-    set_center_child!(block_solution, button_save_sol)
-    set_end_child!(block_solution, button_export_sol)
+    set_center_child!(block_solve, button_save_sol)
+    set_end_child!(block_solve, button_export_sol)  
+
+    block_warmstart = CenterBox(ORIENTATION_HORIZONTAL)
+    data.label_show_warmstart_path = Label("Warmstart: $(data.warmstart_path)")
+    set_start_child!(block_warmstart, switch_warmstart)
+    set_center_child!(block_warmstart, data.label_show_warmstart_path)
+    set_end_child!(block_warmstart, button_load_warmstart_sol)
 
     #=
     print_level_input = hbox(Label("print_level"), print_level_entry) # does not get text properly...
@@ -223,6 +264,6 @@ main() do app::Application
     set_margin!(sep1, 20)
     sep2 = Separator()
     set_margin!(sep2, 20)
-    set_child!(window, vbox(block_ocp, sep1, block_solve, block_solution, sep2, block_plot))
+    set_child!(window, vbox(block_ocp, sep1, block_solve, block_warmstart, sep2, block_plot))
     present!(window)
 end
