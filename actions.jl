@@ -23,7 +23,12 @@ mutable struct GUI_data
     ocp_name::String
     sol_path::String
     solve_options::Dict
-    label_show_ocp_path # Label for Mousetrap
+    use_warmstart::Bool
+    warmstart_sol::Union{Nothing, CTBase.OptimalControlSolution}
+    warmstart_path::String
+    # Labels for Mousetrap gui
+    label_show_ocp_path 
+    label_show_warmstart_path
 
     function GUI_data()
 
@@ -33,7 +38,10 @@ mutable struct GUI_data
         data.ocp_path = "please load problem"
         data.ocp_name = "ocp"
         data.sol_path = "./test/solution"
-        data.solve_options = Dict(:grid_size=>CTDirect.__grid_size_direct(), :print_level=>CTDirect.__print_level_ipopt(), :mu_strategy=>CTDirect.__mu_strategy_ipopt(), :display=>CTDirect.__display(), :max_iter=>1000, :tol=>1e-8) #+++ add ctdirect default for tol and maxiter
+        use_warmstart = false
+        data.warmstart_sol = nothing
+        data.warmstart_path = "please choose solution"
+        data.solve_options = Dict(:grid_size=>CTDirect.__grid_size_direct(), :print_level=>CTDirect.__print_level_ipopt(), :mu_strategy=>CTDirect.__mu_strategy_ipopt(), :display=>CTDirect.__display(), :max_iter=>CTDirect.__max_iter(), :tol=>CTDirect.__tol())
         return data
     end
 end
@@ -68,7 +76,7 @@ function save_sol(data::GUI_data)
         println("Please solve problem before saving solution.")
     else
         print("Save problem solution ", data.sol_path, ".jld2 ...")
-        save_OCP_solution(data.current_sol, filename_prefix=data.sol_path)
+        save(data.current_sol, filename_prefix=data.sol_path)
         println(" Done")
     end
     return nothing
@@ -80,7 +88,7 @@ function export_sol(data::GUI_data)
     else
         sol_filename = "./test/solution"
         print("Export problem solution ", sol_filename, ".json ...")
-        export_OCP_solution(data.current_sol, filename_prefix=sol_filename)
+        export_ocp_solution(data.current_sol, filename_prefix=sol_filename)
         println(" Done")
     end
     return nothing
@@ -88,7 +96,14 @@ end
 
 function load_sol(data::GUI_data)
     print("Load problem solution ", data.sol_path, ".jld2 ...")
-    data.current_sol = load_OCP_solution(data.sol_path)
+    data.current_sol = load(data.sol_path)
+    println(" Done")
+    return nothing
+end
+
+function load_warmstart_sol(data::GUI_data)
+    print("Load warmstart solution ", data.warmstart_path, ".jld2 ...")
+    data.warmstart_sol = load(data.warmstart_path)
     println(" Done")
     return nothing
 end
